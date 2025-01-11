@@ -1,0 +1,232 @@
+AVL Trees
+AVL Trees Implementation Plan
+Below is a step-by-step breakdown to fulfill the requirements for your assignment on AVL Trees, covering all the listed tasks.
+________________________________________
+1. Describe the Data Structure
+What is an AVL Tree?
+An AVL Tree is a self-balancing binary search tree where the difference in height between the left and right subtrees (called the balance factor) is at most 1 for every node. If this property is violated after any insertion or deletion, the tree performs rotations to restore balance.
+Key Features:
+•	Self-balancing: Ensures O(log⁡n)O(\log n) height.
+•	Rotations: Single or double rotations (LL, RR, LR, RL) are used to maintain balance.
+•	Balance Factor: Defined as Balance Factor=Height(Left Subtree)−Height(Right Subtree)\text{Balance Factor} = \text{Height(Left Subtree)} - \text{Height(Right Subtree)}.
+Operations:
+1.	Insertion: Adds a node, then balances the tree if necessary.
+2.	Deletion: Removes a node, then balances the tree if necessary.
+3.	Search: Similar to a binary search tree, allowing O(log⁡n)O(\log n) lookup time.
+________________________________________
+2. Full ADT Specification
+An Abstract Data Type (ADT) for AVL Trees defines its operations and behavior.
+ADT Specification for AVL Tree
+ADT AVLTree {
+    Data:
+        Each node contains:
+        - key: Comparable value
+        - height: Height of the subtree rooted at this node
+        - left: Pointer to the left child
+        - right: Pointer to the right child
+
+    Operations:
+        - create(): Initializes an empty AVL Tree.
+        - insert(key): Adds a key to the AVL Tree while maintaining balance.
+        - delete(key): Removes a key from the AVL Tree while maintaining balance.
+        - search(key): Checks if a key exists in the AVL Tree.
+        - inorderTraversal(): Returns the in-order traversal of the tree.
+        - preorderTraversal(): Returns the pre-order traversal of the tree.
+        - postorderTraversal(): Returns the post-order traversal of the tree.
+        - getHeight(): Returns the height of the tree.
+}
+________________________________________
+3. Choose an Application Domain
+Application Domain: Database Indexing
+AVL trees are often used in database indexing because of their ability to maintain balance, ensuring efficient lookup, insertion, and deletion operations. For example:
+•	Storing keys for indexing records in a database.
+•	Searching for records by a unique ID or key efficiently.
+________________________________________
+4. Implement an Application
+Below is an implementation of AVL trees in Python, applied to the database indexing domain where records are stored and retrieved efficiently.
+Python Implementation
+class Node:
+    def __init__(self, key):
+        self.key = key
+        self.height = 1
+        self.left = None
+        self.right = None
+
+
+class AVLTree:
+    def __init__(self):
+        self.root = None
+
+    # Utility function to get height of a node
+    def getHeight(self, node):
+        if not node:
+            return 0
+        return node.height
+
+    # Utility function to get the balance factor of a node
+    def getBalance(self, node):
+        if not node:
+            return 0
+        return self.getHeight(node.left) - self.getHeight(node.right)
+
+    # Right Rotate
+    def rightRotate(self, y):
+        x = y.left
+        T2 = x.right
+
+        # Perform rotation
+        x.right = y
+        y.left = T2
+
+        # Update heights
+        y.height = max(self.getHeight(y.left), self.getHeight(y.right)) + 1
+        x.height = max(self.getHeight(x.left), self.getHeight(x.right)) + 1
+
+        return x
+
+    # Left Rotate
+    def leftRotate(self, x):
+        y = x.right
+        T2 = y.left
+
+        # Perform rotation
+        y.left = x
+        x.right = T2
+
+        # Update heights
+        x.height = max(self.getHeight(x.left), self.getHeight(x.right)) + 1
+        y.height = max(self.getHeight(y.left), self.getHeight(y.right)) + 1
+
+        return y
+
+    # Insert function
+    def insert(self, node, key):
+        # Perform normal BST insertion
+        if not node:
+            return Node(key)
+        elif key < node.key:
+            node.left = self.insert(node.left, key)
+        else:
+            node.right = self.insert(node.right, key)
+
+        # Update height of the current node
+        node.height = max(self.getHeight(node.left), self.getHeight(node.right)) + 1
+
+        # Get balance factor
+        balance = self.getBalance(node)
+
+        # Perform rotations if necessary
+        # LL Case
+        if balance > 1 and key < node.left.key:
+            return self.rightRotate(node)
+
+        # RR Case
+        if balance < -1 and key > node.right.key:
+            return self.leftRotate(node)
+
+        # LR Case
+        if balance > 1 and key > node.left.key:
+            node.left = self.leftRotate(node.left)
+            return self.rightRotate(node)
+
+        # RL Case
+        if balance < -1 and key < node.right.key:
+            node.right = self.rightRotate(node.right)
+            return self.leftRotate(node)
+
+        return node
+
+    # Function to delete a node
+    def delete(self, node, key):
+        # Perform normal BST deletion
+        if not node:
+            return node
+
+        if key < node.key:
+            node.left = self.delete(node.left, key)
+        elif key > node.key:
+            node.right = self.delete(node.right, key)
+        else:
+            # Node with only one child or no child
+            if node.left is None:
+                temp = node.right
+                node = None
+                return temp
+            elif node.right is None:
+                temp = node.left
+                node = None
+                return temp
+
+            # Node with two children: Get the inorder successor
+            temp = self.getMinValueNode(node.right)
+            node.key = temp.key
+            node.right = self.delete(node.right, temp.key)
+
+        # Update height of the current node
+        node.height = max(self.getHeight(node.left), self.getHeight(node.right)) + 1
+
+        # Get balance factor
+        balance = self.getBalance(node)
+
+        # Perform rotations if necessary
+        if balance > 1 and self.getBalance(node.left) >= 0:
+            return self.rightRotate(node)
+
+        if balance > 1 and self.getBalance(node.left) < 0:
+            node.left = self.leftRotate(node.left)
+            return self.rightRotate(node)
+
+        if balance < -1 and self.getBalance(node.right) <= 0:
+            return self.leftRotate(node)
+
+        if balance < -1 and self.getBalance(node.right) > 0:
+            node.right = self.rightRotate(node.right)
+            return self.leftRotate(node)
+
+        return node
+
+    # Function to find the node with minimum value
+    def getMinValueNode(self, node):
+        if node is None or node.left is None:
+            return node
+        return self.getMinValueNode(node.left)
+
+    # Inorder traversal
+    def inorderTraversal(self, node):
+        if node is not None:
+            self.inorderTraversal(node.left)
+            print(node.key, end=" ")
+            self.inorderTraversal(node.right)
+
+
+# Application: Database Indexing
+if __name__ == "__main__":
+    avl = AVLTree()
+
+    # Insert records (keys represent database IDs)
+    records = [10, 20, 30, 40, 50, 25]
+    for record in records:
+        avl.root = avl.insert(avl.root, record)
+
+    print("Inorder traversal of AVL Tree:")
+    avl.inorderTraversal(avl.root)
+________________________________________
+5. Create a Slide Deck
+Prepare slides to present the following:
+Slide 1: Title and Objective
+•	Title: "AVL Trees: Implementation and Application in Database Indexing"
+•	Objective: To explain AVL Trees, their ADT specification, application in database indexing, and implementation.
+Slide 2: AVL Tree Overview
+•	Define AVL Trees.
+•	Features: Balance factor, rotations, O(log⁡n)O(\log n) performance.
+Slide 3: ADT Specification
+•	List the ADT operations and behavior.
+Slide 4: Application Domain
+•	Explain why AVL Trees are ideal for database indexing.
+Slide 5: Code Walkthrough
+•	Show snippets of the Python implementation.
+Slide 6: Demo
+•	Include screenshots or output from the Python program.
+Slide 7: Conclusion
+•	Summarize the benefits of AVL Trees and their use in real-world applications.
+
